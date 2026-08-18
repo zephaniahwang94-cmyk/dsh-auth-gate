@@ -1,0 +1,65 @@
+{
+  "name": "dsh-auth-gate",
+  "version": "1.1.0",
+  "description": "Authentication and security hardening plugin for DeepSeek Harness",
+  "keywords": [
+    "deepseek-harness",
+    "dsh-plugin",
+    "authentication",
+    "security",
+    "rate-limit"
+  ],
+  "author": "zephaniahwang94-cmyk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zephaniahwang94-cmyk/dsh-auth-gate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zephaniahwang94-cmyk/dsh-auth-gate/issues"
+  },
+  "homepage": "https://github.com/zephaniahwang94-cmyk/dsh-auth-gate#readme",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "assets",
+    "cordis.patch.yml",
+    "presets",
+    "install.ps1"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.0 <5",
+    "@deepseek-ai/dsh-host-webserver": ">=0.1.0-rc.7 <0.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-host-webserver": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,9 @@
+# Approval defense only. This does NOT authenticate the Web/API surface.
+- id: auth-gate
+  config:
+    protections:
+      networkAuth: false
+      approvalRateLimit: true
+    approvalRateLimit:
+      maxPerMinute: 3
+      maxPerSession: 10

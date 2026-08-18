@@ -1,0 +1,40 @@
+# dsh-auth-gate: Authentication and security hardening for DeepSeek Harness.
+#
+# Add this to your $DSH_HOME/cordis.patch.yml or include it in a custom bundle.
+#
+# Usage:
+#   1. Install: dsh plugin --profile web add /path/to/dsh-auth-gate
+#   2. Configure this bundle patch, then start the web profile
+#
+# Modes:
+#   - bearer: API requests require Authorization: Bearer <token>
+#   - session: login page at /auth/login with username/password
+#   - both: both bearer token and session login enabled
+
+- insert:
+    - id: auth-gate
+      name: 'dsh-auth-gate'
+      config:
+        # Backward-compatible default: full protection. Override with a preset.
+        protections:
+          networkAuth: true
+          approvalRateLimit: true
+
+        # Authentication mode: 'bearer' | 'session' | 'both'
+        mode: session
+
+        # Bearer tokens must be at least 32 bytes.
+        # token: 'your-secret-token-here'
+
+        # Session settings (for mode 'session' or 'both')
+        # Username/password are deliberately absent from the Loader config tree.
+        # The plugin reads DSH_AUTH_USERNAME and DSH_AUTH_PASSWORD directly.
+        # Set DSH_AUTH_SECURE_COOKIE=true for HTTPS/public deployments.
+        secureCookie: !!js process.env.DSH_AUTH_SECURE_COOKIE === 'true'
+        # sessionTtl: 3600
+        # loginPath: /auth/login
+
+        # Sandbox escalation rate limiting
+        # approvalRateLimit:
+        #   maxPerMinute: 3
+        #   maxPerSession: 10

@@ -1,0 +1,9 @@
+# Network-only protection. HTTP and WebSocket are intentionally inseparable.
+- id: auth-gate
+  config:
+    protections:
+      networkAuth: true
+      approvalRateLimit: false
+    auth:
+      mode: session
+      secureCookie: !!js process.env.DSH_AUTH_SECURE_COOKIE === 'true'

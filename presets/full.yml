@@ -1,0 +1,13 @@
+# Full protection: HTTP/WebSocket authentication plus approval rate limiting.
+# Credentials are read directly by the plugin and never enter this config tree.
+- id: auth-gate
+  config:
+    protections:
+      networkAuth: true
+      approvalRateLimit: true
+    auth:
+      mode: session
+      secureCookie: !!js process.env.DSH_AUTH_SECURE_COOKIE === 'true'
+    approvalRateLimit:
+      maxPerMinute: 3
+      maxPerSession: 10
