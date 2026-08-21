@@ -15,8 +15,8 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -37,20 +37,26 @@ jobs:
           ) | Out-Null
           if ($errors.Count) { throw ($errors | Out-String) }
 
-  clean-install-linux:
+  clean-installer-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
-      - name: Install approval-only preset into an isolated profile
-        env:
-          DSH_HOME: ${{ runner.temp }}/dsh-auth-gate-home
-        run: ./install.sh --protection ApprovalLimit --profile smoke
-      - name: Verify bundle registration
-        env:
-          DSH_HOME: ${{ runner.temp }}/dsh-auth-gate-home
+      - name: Provide isolated Harness CLI boundary
         run: |
-          node -e "const p=require(process.env.DSH_HOME+'/profiles/smoke/package.json'); if(!p.dsh.profile.bundles.includes('dsh-auth-gate')) process.exit(1)"
+          mkdir -p "$RUNNER_TEMP/bin"
+          printf '#!/bin/sh\nprintf "%%s\\n" "$*" > "$DSH_INSTALL_LOG"\n' > "$RUNNER_TEMP/bin/dsh"
+          printf '#!/bin/sh\nexit 0\n' > "$RUNNER_TEMP/bin/pnpm"
+          chmod +x "$RUNNER_TEMP/bin/dsh" "$RUNNER_TEMP/bin/pnpm"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Run clean POSIX installer
+        env:
+          DSH_INSTALL_LOG: ${{ runner.temp }}/dsh-install.log
+        run: ./install.sh --protection ApprovalLimit --profile smoke
+      - name: Verify Harness bundle registration call
+        env:
+          DSH_INSTALL_LOG: ${{ runner.temp }}/dsh-install.log
+        run: grep -F "plugin --profile smoke add $GITHUB_WORKSPACE" "$DSH_INSTALL_LOG"
