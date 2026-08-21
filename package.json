@@ -1,6 +1,6 @@
 {
   "name": "dsh-auth-gate",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Authentication and security hardening plugin for DeepSeek Harness",
   "keywords": [
     "deepseek-harness",
@@ -21,6 +21,9 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "dsh-auth-gate-install": "install.sh"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -32,7 +35,8 @@
     "assets",
     "cordis.patch.yml",
     "presets",
-    "install.ps1"
+    "install.ps1",
+    "install.sh"
   ],
   "dsh": {
     "bundle": {

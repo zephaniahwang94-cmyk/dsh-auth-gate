@@ -120,3 +120,17 @@ test('login page keeps Harness styling, accessibility, and escaped content', () 
   assert.doesNotMatch(page, /<invalid>/)
   assert.match(page, /&lt;invalid&gt;/)
 })
+
+test('published package includes native Windows and POSIX bootstrap installers', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  assert.ok(manifest.files.includes('install.ps1'))
+  assert.ok(manifest.files.includes('install.sh'))
+
+  const shellInstaller = readFileSync(new URL('../install.sh', import.meta.url), 'utf8')
+  const powershellInstaller = readFileSync(new URL('../install.ps1', import.meta.url), 'utf8')
+  for (const source of [shellInstaller, powershellInstaller]) {
+    assert.match(source, /npm ci --ignore-scripts/)
+    assert.match(source, /npm run build/)
+    assert.doesNotMatch(source, /DSH_AUTH_PASSWORD\s*=\s*['"][^'"]{12}/)
+  }
+})

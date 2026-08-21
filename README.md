@@ -95,7 +95,26 @@ The plugin wraps both existing and future DSH HTTP/upgrade routes. Because curre
 
 ## Install and choose protection
 
-Install once and select a preset. Credentials stay in environment variables and are never written to a patch file.
+Install once and select a preset. Credentials stay in environment variables and are never written to a patch file. Both installers bootstrap dependencies, build the plugin, register it in the selected Harness profile, and print the reusable launch command.
+
+### Linux / macOS
+
+```sh
+git clone https://github.com/zephaniahwang94-cmyk/dsh-auth-gate.git
+cd dsh-auth-gate
+export DSH_AUTH_USERNAME=admin
+printf 'Password (12+ characters): ' >&2
+stty -echo; IFS= read -r DSH_AUTH_PASSWORD; stty echo; printf '\n' >&2
+export DSH_AUTH_PASSWORD
+# Required when the public URL uses HTTPS:
+export DSH_AUTH_SECURE_COOKIE=true
+
+./install.sh --protection Full
+```
+
+Use `NetworkAuth` or `ApprovalLimit` instead of `Full` when only that protection is wanted. Add `--start` to start Harness immediately, `--profile NAME` for another profile, or `--harness-path /path/to/deepseek-harness` for a source checkout.
+
+### Windows PowerShell
 
 ```powershell
 $env:DSH_AUTH_USERNAME = 'admin'
@@ -108,7 +127,7 @@ $env:DSH_AUTH_SECURE_COOKIE = 'true'
 .\install.ps1 -Protection ApprovalLimit
 ```
 
-If `dsh` is not on `PATH`, the script automatically uses a sibling `deepseek-harness` source checkout. For another location, pass `-HarnessPath C:\path\to\deepseek-harness`.
+If `dsh` is not on `PATH`, either installer automatically uses a sibling `deepseek-harness` source checkout. If neither exists, it falls back to the official `npx @deepseek-ai/dsh` CLI. For another source location, pass `-HarnessPath C:\path\to\deepseek-harness` or `--harness-path /path/to/deepseek-harness`.
 
 `Full` is the default. Add `-Start` to launch immediately. Otherwise the script prints the exact reusable launch command. Keep using its `--patch` argument on later launches:
 
@@ -138,6 +157,8 @@ $env:DSH_AUTH_SECURE_COOKIE = 'false' # local HTTP only; use true with HTTPS
 pnpm dsh web
 ```
 
+On Linux, export the same variables in the shell or provide them to the service manager that launches Harness. Avoid putting the password directly in shell history. For systemd, use a root/user-readable-only `EnvironmentFile` (`chmod 600`) and reference it from the Harness unit; restart the unit after rotating credentials. Environment variables may be readable by other processes with the same OS identity, so use a dedicated service account for shared hosts.
+
 Environment changes do not affect an already-running process. Restart Harness after changing a password. Because session signing keys are generated per startup, every restart signs all browser sessions out.
 
 ### WebUI-only users on Windows
@@ -146,7 +167,7 @@ The first password cannot safely be created inside the protected WebUI: authenti
 
 ### Collaborator accounts
 
-Version 1.1 supports **one shared login identity only**. It cannot create a second independently named collaborator account or attribute actions to different people. Sharing the primary password gives access but is not an independent account and is not recommended for untrusted teams.
+Version 1.2 supports **one shared login identity only**. It cannot create a second independently named collaborator account or attribute actions to different people. Sharing the primary password gives access but is not an independent account and is not recommended for untrusted teams.
 
 For a temporary trusted collaborator, rotate the shared password, restart Harness, share it through a secure channel, then rotate and restart again when access should end. For durable collaborators, use separate Harness instances/OS identities or an authenticating reverse proxy with one identity per person. Do not claim per-user isolation: authenticated users still share the same Agent, sessions, workspace authority, and audit identity.
 
@@ -375,7 +396,26 @@ DSH_AUTH_TOKEN="" dsh web --host 0.0.0.0  # 未来支持时
 
 ## 安装并选择防护类型
 
-插件只安装一次，通过预设选择防护模块。凭据只从环境变量读取，不会写入 patch 文件。
+插件只安装一次，通过预设选择防护模块。凭据只从环境变量读取，不会写入 patch 文件。两个安装器都会自动安装依赖、构建插件、注册到指定 Harness profile，并输出可重复使用的启动命令。
+
+### Linux / macOS
+
+```sh
+git clone https://github.com/zephaniahwang94-cmyk/dsh-auth-gate.git
+cd dsh-auth-gate
+export DSH_AUTH_USERNAME=admin
+printf '请输入密码（至少 12 个字符）: ' >&2
+stty -echo; IFS= read -r DSH_AUTH_PASSWORD; stty echo; printf '\n' >&2
+export DSH_AUTH_PASSWORD
+# 公网 URL 使用 HTTPS 时必须设置：
+export DSH_AUTH_SECURE_COOKIE=true
+
+./install.sh --protection Full
+```
+
+只需要单项防护时可将 `Full` 改为 `NetworkAuth` 或 `ApprovalLimit`。添加 `--start` 可立即启动，`--profile NAME` 可选择其他 profile，源码仓库位于其他位置时使用 `--harness-path /path/to/deepseek-harness`。
+
+### Windows PowerShell
 
 ```powershell
 $env:DSH_AUTH_USERNAME = 'admin'
@@ -388,7 +428,7 @@ $env:DSH_AUTH_SECURE_COOKIE = 'true'
 .\install.ps1 -Protection ApprovalLimit
 ```
 
-如果 `dsh` 不在 `PATH`，脚本会自动使用同级的 `deepseek-harness` 源码仓库；位于其他目录时传入 `-HarnessPath C:\path\to\deepseek-harness`。
+如果 `dsh` 不在 `PATH`，两个脚本都会优先使用同级的 `deepseek-harness` 源码仓库；两者都不存在时，自动回退到官方 `npx @deepseek-ai/dsh` CLI。源码位于其他目录时，分别传入 `-HarnessPath C:\path\to\deepseek-harness` 或 `--harness-path /path/to/deepseek-harness`。
 
 默认是 `Full`。添加 `-Start` 可立即启动；否则脚本会输出准确的启动命令，例如：
 
@@ -420,13 +460,15 @@ pnpm dsh web
 
 环境变量修改不会影响已经运行的进程；修改密码后必须重启 Harness。每次启动都会生成新的 session 签名密钥，因此重启也会让全部浏览器会话退出。
 
+Linux 用户可在当前 shell 中导出相同变量，或交给启动 Harness 的服务管理器。不要把密码直接写入 shell 历史。使用 systemd 时，应将变量放入权限为 `600` 的 `EnvironmentFile` 并由 Harness unit 引用；轮换密码后重启 unit。同一操作系统身份的其他进程可能读取环境变量，因此共享主机建议使用独立服务账户。
+
 ### 只使用 WebUI 的 Windows 用户
 
 首次密码不能安全地在受保护的 WebUI 内创建，因为页面开放前认证就必须存在。打开 **开始菜单 → 编辑账户的环境变量**，新增 `DSH_AUTH_USERNAME`、`DSH_AUTH_PASSWORD` 和 `DSH_AUTH_SECURE_COOKIE`，然后彻底退出并重新打开 Harness WebUI 启动器。Windows 会保存用户环境变量，同一操作系统用户运行的其他进程可能读取它们，因此只适用于可信的本机账户。
 
 ### 协作者账户
 
-1.1 版本目前只支持**一个共享登录身份**，不能创建第二个独立命名的协作者账户，也不能把操作归因到不同人员。共享主密码虽然可以访问，但不属于独立账户，不建议用于互不信任的团队。
+1.2 版本目前只支持**一个共享登录身份**，不能创建第二个独立命名的协作者账户，也不能把操作归因到不同人员。共享主密码虽然可以访问，但不属于独立账户，不建议用于互不信任的团队。
 
 临时可信协作者可使用以下流程：轮换共享密码并重启 Harness，通过安全渠道发送密码；协作结束后再次轮换并重启。长期协作者应使用独立 Harness 实例/操作系统身份，或在前方部署支持每人独立身份的认证反向代理。即使认证通过，用户仍共享 Agent、session、workspace 权限和审计身份，不具备 per-user 隔离。
 

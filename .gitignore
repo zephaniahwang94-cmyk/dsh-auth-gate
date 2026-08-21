@@ -2,3 +2,4 @@ node_modules/
 dist/
 .npm-cache/
 .local-*.log
+.smoke-dsh-home/

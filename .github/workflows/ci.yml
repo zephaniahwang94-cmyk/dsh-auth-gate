@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm run typecheck
+      - if: runner.os == 'Linux'
+        run: sh -n ./install.sh && ./install.sh --help
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path ./install.ps1),
+            [ref] $tokens,
+            [ref] $errors
+          ) | Out-Null
+          if ($errors.Count) { throw ($errors | Out-String) }
+
+  clean-install-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install approval-only preset into an isolated profile
+        env:
+          DSH_HOME: ${{ runner.temp }}/dsh-auth-gate-home
+        run: ./install.sh --protection ApprovalLimit --profile smoke
+      - name: Verify bundle registration
+        env:
+          DSH_HOME: ${{ runner.temp }}/dsh-auth-gate-home
+        run: |
+          node -e "const p=require(process.env.DSH_HOME+'/profiles/smoke/package.json'); if(!p.dsh.profile.bundles.includes('dsh-auth-gate')) process.exit(1)"
